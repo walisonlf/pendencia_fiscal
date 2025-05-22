@@ -21,6 +21,9 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# Importação dos modelos para garantir que sejam registrados
+from src.models.pendencia import Pendencia, ItemPendencia, ItemResumo, ItemDecisao
+
 # Importação dos blueprints
 from src.routes.pendencia import pendencia_bp
 from src.routes.static import static_files, index
@@ -29,8 +32,7 @@ from src.routes.static import static_files, index
 app.register_blueprint(pendencia_bp, url_prefix='/api')
 
 # Criação das tabelas do banco de dados
-@app.before_first_request
-def create_tables():
+with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
