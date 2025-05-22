@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Pendências Fiscais</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --success-color: #4cc9f0;
+            --warning-color: #f8961e;
+            --danger-color: #f72585;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            --hover-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #2b2d42;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--secondary-color), #3a0ca3);
+            color: white;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+            border: none;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+        
+        .summary-card {
+            text-align: center;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            color: white;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            border: none;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .summary-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .summary-card:hover::after {
+            opacity: 1;
+        }
+        
+        .summary-card.active {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .summary-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .summary-card .count {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0.3rem 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .summary-card small {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .urgente-card {
+            background: linear-gradient(135deg, var(--danger-color), #b5179e);
+        }
+        
+        .importante-card {
+            background: linear-gradient(135deg, var(--warning-color), #f3722c);
+        }
+        
+        .normal-card {
+            background: linear-gradient(135deg, var(--success-color), #4895ef);
+        }
+        
+        .table-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .table-container:hover {
+            box-shadow: var(--hover-shadow);
+        }
+        
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 50rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+        }
+        
+        .badge-urgente {
+            background-color: rgba(247, 37, 133, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .badge-importante {
+            background-color: rgba(248, 150, 30, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .badge-normal {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: var(--success-color);
+        }
+        
+        .cell-content {
+            padding: 0.75rem;
+            background-color: white;
+            border-radius: 8px;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .task-cell {
+            background-color: rgba(248, 249, 250, 0.5);
+            border-radius: 8px;
+        }
+        
+        .item-container {
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        
+        .item-container:hover {
+            transform: translateX(3px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .urgente-item {
+            border-left-color: var(--danger-color);
+            background-color: rgba(247, 37, 133, 0.03);
+        }
+        
+        .importante-item {
+            border-left-color: var(--warning-color);
+            background-color: rgba(248, 150, 30, 0.03);
+        }
+        
+        .normal-item {
+            border-left-color: var(--success-color);
+            background-color: rgba(76, 201, 240, 0.03);
+        }
+        
+        .item-number {
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-right: 0.5rem;
+            min-width: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .item-text {
+            flex-grow: 1;
+            word-break: break-word;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .urgente-text {
+            color: #2b2d42;
+            font-weight: 500;
+        }
+        
+        .importante-text {
+            color: #2b2d42;
+            font-weight: 500;
+        }
+        
+        .normal-text {
+            color: #2b2d42;
+        }
+        
+        .delete-item-btn {
+            position: absolute;
+            right: 0.5rem;
+            top: 0.5rem;
+            opacity: 0;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            padding: 0.15rem 0.35rem;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .item-container:hover .delete-item-btn {
+            opacity: 1;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        
+        .delete-item-btn:hover {
+            background-color: rgba(220, 53, 69, 0.2) !important;
+        }
+        
+        .add-item-btn {
+            width: 100%;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            background-color: rgba(67, 97, 238, 0.05);
+            color: var(--primary-color);
+            border: 1px dashed rgba(67, 97, 238, 0.3);
+            transition: all 0.2s;
+        }
+        
+        .add-item-btn:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+            border-color: var(--primary-color);
+        }
+        
+        .table th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table td {
+            padding: 0.75rem;
+            vertical-align: top;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .table-responsive {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%234361ee' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 16px 12px;
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .search-input {
+            padding-left: 2.5rem;
+            border-radius: 8px;
+        }
+        
+        .no-content {
+            color: #6c757d;
+            font-style: italic;
+            padding: 1rem;
+            text-align: center;
+            background-color: rgba(0,0,0,0.03);
+            border-radius: 8px;
+        }
+        
+        .task-checkbox {
+            margin-right: 0.5rem;
+            margin-top: 0.25rem;
+            cursor: pointer;
+        }
+        
+        .task-completed {
+            text-decoration: line-through;
+            color: #6c757d;
+            opacity: 0.7;
+        }
+        
+        .last-saved {
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 1rem;
+            font-style: italic;
+        }
+        
+        .autosave-notice {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background-color: var(--success-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-weight: 500;
+            animation: fadeIn 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            padding: 0.3rem;
+        }
+        
+        .action-buttons .btn {
+            width: 100%;
+            padding: 0.4rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+        
+        .btn-outline-danger {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+        
+        .btn-outline-danger:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-outline-secondary {
+            border-color: #6c757d;
+            color: #6c757d;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a56d4;
+            border-color: #3a56d4;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #3ab0d4;
+            border-color: #3ab0d4;
+        }
+        
+        .btn-light {
+            background-color: white;
+            color: var(--secondary-color);
+        }
+        
+        .btn-light:hover {
+            background-color: #f1f3f9;
+        }
+        
+        .status-select {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s;
+        }
+        
+        .status-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .uf-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        
+        .uf-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+        
+        /* Custom scrollbar */
+        .cell-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .cell-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .cell-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .cell-content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Ajustes específicos para cada coluna */
+        td:nth-child(1) { /* Situação */
+            width: 120px;
+        }
+        
+        td:nth-child(2) { /* UF */
+            width: 80px;
+        }
+        
+        td:nth-child(3) { /* Filial/Pendências */
+            width: 250px;
+        }
+        
+        td:nth-child(4) { /* Resumo da Ocorrência */
+            width: 300px;
+        }
+        
+        td:nth-child(5) { /* Decisão Interna */
+            width: 300px;
+        }
+        
+        td:nth-child(6) { /* Ações */
+            width: 100px;
+        }
+        
+        /* Animação de entrada para novas linhas */
+        @keyframes fadeInRow {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .table tbody tr {
+            animation: fadeInRow 0.3s ease-out;
+        }
+        
+        /* Efeito de hover na linha */
+        .table-hover tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.03);
+        }
+        
+        /* Modal customizado */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.5rem;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #e9ecef;
+            padding: 1.5rem;
+        }
+        
+        .modal-title {
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        /* Responsividade */
+        @media (max-width: 992px) {
+            .summary-card {
+                min-height: 100px;
+            }
+            
+            .table-responsive {
+                overflow-x: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem 0;
+                margin-bottom: 1.5rem;
+            }
+            
+            .summary-card {
+                min-height: 90px;
+                margin-bottom: 1rem;
+            }
+            
+            .table-container {
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">Controle de Pendências Fiscais</h1>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">Sistema de Gerenciamento de Pendências por UF</p>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="summary-card urgente-card" id="urgente-card">
+                    <h3>URGENTE</h3>
+                    <div class="count" id="count-urgente">0</div>
+                    <small>Pendências em estado crítico</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card importante-card" id="importante-card">
+                    <h3>IMPORTANTE</h3>
+                    <div class="count" id="count-importante">0</div>
+                    <small>Pendências em atenção</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-card normal-card" id="normal-card">
+                    <h3>NORMAL</h3>
+                    <div class="count" id="count-normal">0</div>
+                    <small>Pendências em andamento</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filters and Search -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label for="filtro-situacao" class="form-label">Filtrar por Situação</label>
+                    <select class="form-select" id="filtro-situacao">
+                        <option value="">Todas</option>
+                        <option value="Urgente">Urgente</option>
+                        <option value="Importante">Importante</option>
+                        <option value="Normal">Normal</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label for="filtro-uf" class="form-label">Filtrar por UF</label>
+                    <select class="form-select" id="filtro-uf">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="busca" class="form-label">Buscar</label>
+                    <div class="search-container">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" class="form-control search-input" id="busca" placeholder="Buscar pendências...">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add New Button -->
+        <div class="row mb-4">
+            <div class="col-12 text-end">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaPendencia">
+                    <i class="bi bi-plus-circle me-2"></i> Nova Pendência
+                </button>
+            </div>
+        </div>
+        
+        <!-- Table Container -->
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table table-hover" id="tabela-pendencias">
+                    <thead>
+                        <tr>
+                            <th>Situação</th>
+                            <th>UF</th>
+                            <th>Filial/Pendências</th>
+                            <th>Resumo da Ocorrência</th>
+                            <th>Decisão Interna</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela">
+                        <!-- Conteúdo da tabela será preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="last-saved" id="ultimo-salvamento">
+                Último salvamento: Nunca
+            </div>
+        </div>
+    </main>
+    
+    <!-- Modal Nova Pendência -->
+    <div class="modal fade" id="modalNovaPendencia" tabindex="-1" aria-labelledby="modalNovaPendenciaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNovaPendenciaLabel">Nova Pendência</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-pendencia">
+                        <input type="hidden" id="pendencia-id" value="">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="situacao" class="form-label">Situação</label>
+                                <select class="form-select" id="situacao" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Urgente">Urgente</option>
+                                    <option value="Importante">Importante</option>
+                                    <option value="Normal">Normal</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="uf" class="form-label">UF</label>
+                                <input type="text" class="form-control uf-input" id="uf" maxlength="2" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Pendências</label>
+                            <div id="pendencias-container">
+                                <div class="item-container">
+                                    <div class="d-flex">
+                                        <span class="item-number">1.</span>
+                                        <textarea class="form-control item-text pendencia-item" rows="2" required></textarea>
+                                    </div>
+                                    <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="add-item-btn" onclick="adicionarPendencia()">
+                                <i class="bi bi-plus-circle me-2"></i> Adicionar Pendência
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Resumo da Ocorrência</label>
+                            <div id="resumos-container">
+                                <div class="item-container">
+                                    <div class="d-flex">
+                                        <span class="item-number">1.</span>
+                                        <textarea class="form-control item-text resumo-item" rows="2" required></textarea>
+                                    </div>
+                                    <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="add-item-btn" onclick="adicionarResumo()">
+                                <i class="bi bi-plus-circle me-2"></i> Adicionar Resumo
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Decisão Interna</label>
+                            <div id="decisoes-container">
+                                <div class="item-container">
+                                    <div class="d-flex">
+                                        <span class="item-number">1.</span>
+                                        <textarea class="form-control item-text decisao-item" rows="2" required></textarea>
+                                    </div>
+                                    <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="add-item-btn" onclick="adicionarDecisao()">
+                                <i class="bi bi-plus-circle me-2"></i> Adicionar Decisão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarPendencia()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Autosave Notice -->
+    <div class="autosave-notice" id="autosave-notice" style="display: none;">
+        <i class="bi bi-check-circle me-2"></i> Alterações salvas com sucesso!
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variáveis globais
+        let pendencias = [];
+        let modalPendencia;
+        let filtroSituacao = document.getElementById('filtro-situacao');
+        let filtroUF = document.getElementById('filtro-uf');
+        let campoBusca = document.getElementById('busca');
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            modalPendencia = new bootstrap.Modal(document.getElementById('modalNovaPendencia'));
+            
+            // Carregar pendências
+            carregarPendencias();
+            
+            // Adicionar eventos de filtro
+            filtroSituacao.addEventListener('change', filtrarPendencias);
+            filtroUF.addEventListener('change', filtrarPendencias);
+            campoBusca.addEventListener('input', filtrarPendencias);
+            
+            // Adicionar eventos para os cards de resumo
+            document.getElementById('urgente-card').addEventListener('click', () => {
+                filtroSituacao.value = 'Urgente';
+                filtrarPendencias();
+            });
+            
+            document.getElementById('importante-card').addEventListener('click', () => {
+                filtroSituacao.value = 'Importante';
+                filtrarPendencias();
+            });
+            
+            document.getElementById('normal-card').addEventListener('click', () => {
+                filtroSituacao.value = 'Normal';
+                filtrarPendencias();
+            });
+            
+            // Converter UF para maiúsculo
+            document.getElementById('uf').addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        });
+        
+        // Funções para manipulação de pendências
+        async function carregarPendencias() {
+            try {
+                const response = await fetch('/api/pendencias');
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar pendências');
+                }
+                
+                pendencias = await response.json();
+                atualizarTabela();
+                atualizarContadores();
+                atualizarFiltroUF();
+                atualizarUltimoSalvamento();
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarNotificacao('Erro ao carregar pendências', 'danger');
+            }
+        }
+        
+        function atualizarTabela(dados = pendencias) {
+            const corpoTabela = document.getElementById('corpo-tabela');
+            corpoTabela.innerHTML = '';
+            
+            if (dados.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="6">
+                        <div class="no-content">
+                            Nenhuma pendência encontrada
+                        </div>
+                    </td>
+                `;
+                corpoTabela.appendChild(tr);
+                return;
+            }
+            
+            dados.forEach(pendencia => {
+                const tr = document.createElement('tr');
+                
+                // Classe da situação
+                let situacaoClass = '';
+                if (pendencia.situacao === 'Urgente') {
+                    situacaoClass = 'badge-urgente';
+                } else if (pendencia.situacao === 'Importante') {
+                    situacaoClass = 'badge-importante';
+                } else {
+                    situacaoClass = 'badge-normal';
+                }
+                
+                // Pendências
+                let pendenciasHTML = '';
+                if (pendencia.pendencias && pendencia.pendencias.length > 0) {
+                    pendencia.pendencias.forEach(item => {
+                        pendenciasHTML += `
+                            <div class="item-container ${pendencia.situacao.toLowerCase()}-item">
+                                <div class="d-flex">
+                                    <span class="item-number">${item.numero}.</span>
+                                    <div class="item-text ${pendencia.situacao.toLowerCase()}-text">${item.descricao}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    pendenciasHTML = '<div class="no-content">Nenhum item cadastrado</div>';
+                }
+                
+                // Resumos
+                let resumosHTML = '';
+                if (pendencia.resumos && pendencia.resumos.length > 0) {
+                    pendencia.resumos.forEach(item => {
+                        resumosHTML += `
+                            <div class="item-container ${pendencia.situacao.toLowerCase()}-item">
+                                <div class="d-flex">
+                                    <span class="item-number">${item.numero}.</span>
+                                    <div class="item-text ${pendencia.situacao.toLowerCase()}-text">${item.descricao}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    resumosHTML = '<div class="no-content">Nenhum item cadastrado</div>';
+                }
+                
+                // Decisões
+                let decisoesHTML = '';
+                if (pendencia.decisoes && pendencia.decisoes.length > 0) {
+                    pendencia.decisoes.forEach(item => {
+                        decisoesHTML += `
+                            <div class="item-container ${pendencia.situacao.toLowerCase()}-item">
+                                <div class="d-flex">
+                                    <span class="item-number">${item.numero}.</span>
+                                    <div class="item-text ${pendencia.situacao.toLowerCase()}-text">${item.descricao}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    decisoesHTML = '<div class="no-content">Nenhum item cadastrado</div>';
+                }
+                
+                tr.innerHTML = `
+                    <td>
+                        <span class="status-badge ${situacaoClass}">${pendencia.situacao}</span>
+                    </td>
+                    <td class="text-center">
+                        <strong>${pendencia.uf}</strong>
+                    </td>
+                    <td>
+                        <div class="cell-content">
+                            ${pendenciasHTML}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="cell-content">
+                            ${resumosHTML}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="cell-content task-cell">
+                            ${decisoesHTML}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="editarPendencia(${pendencia.id})">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="confirmarExclusao(${pendencia.id})">
+                                <i class="bi bi-trash"></i> Excluir
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                corpoTabela.appendChild(tr);
+            });
+        }
+        
+        function atualizarContadores() {
+            const countUrgente = pendencias.filter(p => p.situacao === 'Urgente').length;
+            const countImportante = pendencias.filter(p => p.situacao === 'Importante').length;
+            const countNormal = pendencias.filter(p => p.situacao === 'Normal').length;
+            
+            document.getElementById('count-urgente').textContent = countUrgente;
+            document.getElementById('count-importante').textContent = countImportante;
+            document.getElementById('count-normal').textContent = countNormal;
+        }
+        
+        function atualizarFiltroUF() {
+            const filtroUF = document.getElementById('filtro-uf');
+            const ufs = [...new Set(pendencias.map(p => p.uf))].sort();
+            
+            // Manter a opção "Todas"
+            filtroUF.innerHTML = '<option value="">Todas</option>';
+            
+            // Adicionar as UFs
+            ufs.forEach(uf => {
+                const option = document.createElement('option');
+                option.value = uf;
+                option.textContent = uf;
+                filtroUF.appendChild(option);
+            });
+        }
+        
+        function atualizarUltimoSalvamento() {
+            const agora = new Date();
+            const dataFormatada = agora.toLocaleDateString('pt-BR') + ', ' + 
+                                 agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('ultimo-salvamento').textContent = 'Último salvamento: ' + dataFormatada;
+        }
+        
+        function filtrarPendencias() {
+            const situacao = filtroSituacao.value;
+            const uf = filtroUF.value;
+            const busca = campoBusca.value.toLowerCase();
+            
+            let dadosFiltrados = [...pendencias];
+            
+            // Filtrar por situação
+            if (situacao) {
+                dadosFiltrados = dadosFiltrados.filter(p => p.situacao === situacao);
+            }
+            
+            // Filtrar por UF
+            if (uf) {
+                dadosFiltrados = dadosFiltrados.filter(p => p.uf === uf);
+            }
+            
+            // Filtrar por busca
+            if (busca) {
+                dadosFiltrados = dadosFiltrados.filter(p => {
+                    // Verificar na UF
+                    if (p.uf.toLowerCase().includes(busca)) {
+                        return true;
+                    }
+                    
+                    // Verificar nas pendências
+                    if (p.pendencias && p.pendencias.some(item => item.descricao.toLowerCase().includes(busca))) {
+                        return true;
+                    }
+                    
+                    // Verificar nos resumos
+                    if (p.resumos && p.resumos.some(item => item.descricao.toLowerCase().includes(busca))) {
+                        return true;
+                    }
+                    
+                    // Verificar nas decisões
+                    if (p.decisoes && p.decisoes.some(item => item.descricao.toLowerCase().includes(busca))) {
+                        return true;
+                    }
+                    
+                    return false;
+                });
+            }
+            
+            atualizarTabela(dadosFiltrados);
+        }
+        
+        // Funções para o formulário
+        function limparFormulario() {
+            document.getElementById('pendencia-id').value = '';
+            document.getElementById('situacao').value = '';
+            document.getElementById('uf').value = '';
+            
+            // Limpar pendências
+            const pendenciasContainer = document.getElementById('pendencias-container');
+            pendenciasContainer.innerHTML = `
+                <div class="item-container">
+                    <div class="d-flex">
+                        <span class="item-number">1.</span>
+                        <textarea class="form-control item-text pendencia-item" rows="2" required></textarea>
+                    </div>
+                    <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Limpar resumos
+            const resumosContainer = document.getElementById('resumos-container');
+            resumosContainer.innerHTML = `
+                <div class="item-container">
+                    <div class="d-flex">
+                        <span class="item-number">1.</span>
+                        <textarea class="form-control item-text resumo-item" rows="2" required></textarea>
+                    </div>
+                    <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Limpar decisões
+            const decisoesContainer = document.getElementById('decisoes-container');
+            decisoesContainer.innerHTML = `
+                <div class="item-container">
+                    <div class="d-flex">
+                        <span class="item-number">1.</span>
+                        <textarea class="form-control item-text decisao-item" rows="2" required></textarea>
+                    </div>
+                    <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+        }
+        
+        function adicionarPendencia() {
+            const container = document.getElementById('pendencias-container');
+            const itens = container.querySelectorAll('.item-container');
+            const numero = itens.length + 1;
+            
+            const novoItem = document.createElement('div');
+            novoItem.className = 'item-container';
+            novoItem.innerHTML = `
+                <div class="d-flex">
+                    <span class="item-number">${numero}.</span>
+                    <textarea class="form-control item-text pendencia-item" rows="2" required></textarea>
+                </div>
+                <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            
+            container.appendChild(novoItem);
+        }
+        
+        function adicionarResumo() {
+            const container = document.getElementById('resumos-container');
+            const itens = container.querySelectorAll('.item-container');
+            const numero = itens.length + 1;
+            
+            const novoItem = document.createElement('div');
+            novoItem.className = 'item-container';
+            novoItem.innerHTML = `
+                <div class="d-flex">
+                    <span class="item-number">${numero}.</span>
+                    <textarea class="form-control item-text resumo-item" rows="2" required></textarea>
+                </div>
+                <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            
+            container.appendChild(novoItem);
+        }
+        
+        function adicionarDecisao() {
+            const container = document.getElementById('decisoes-container');
+            const itens = container.querySelectorAll('.item-container');
+            const numero = itens.length + 1;
+            
+            const novoItem = document.createElement('div');
+            novoItem.className = 'item-container';
+            novoItem.innerHTML = `
+                <div class="d-flex">
+                    <span class="item-number">${numero}.</span>
+                    <textarea class="form-control item-text decisao-item" rows="2" required></textarea>
+                </div>
+                <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            
+            container.appendChild(novoItem);
+        }
+        
+        function removerItem(botao) {
+            const item = botao.closest('.item-container');
+            const container = item.parentElement;
+            
+            // Remover o item
+            container.removeChild(item);
+            
+            // Atualizar a numeração
+            const itens = container.querySelectorAll('.item-container');
+            itens.forEach((item, index) => {
+                item.querySelector('.item-number').textContent = (index + 1) + '.';
+            });
+        }
+        
+        async function salvarPendencia() {
+            // Validar formulário
+            const form = document.getElementById('form-pendencia');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Obter dados do formulário
+            const id = document.getElementById('pendencia-id').value;
+            const situacao = document.getElementById('situacao').value;
+            const uf = document.getElementById('uf').value.toUpperCase();
+            
+            // Obter pendências
+            const pendenciasItems = Array.from(document.querySelectorAll('.pendencia-item'))
+                .map(item => item.value.trim())
+                .filter(item => item !== '');
+            
+            // Obter resumos
+            const resumosItems = Array.from(document.querySelectorAll('.resumo-item'))
+                .map(item => item.value.trim())
+                .filter(item => item !== '');
+            
+            // Obter decisões
+            const decisoesItems = Array.from(document.querySelectorAll('.decisao-item'))
+                .map(item => item.value.trim())
+                .filter(item => item !== '');
+            
+            // Montar objeto de dados
+            const dados = {
+                situacao,
+                uf,
+                pendencias: pendenciasItems,
+                resumos: resumosItems,
+                decisoes: decisoesItems
+            };
+            
+            try {
+                let response;
+                
+                if (id) {
+                    // Atualizar pendência existente
+                    response = await fetch(`/api/pendencias/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(dados)
+                    });
+                } else {
+                    // Criar nova pendência
+                    response = await fetch('/api/pendencias', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(dados)
+                    });
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Erro ao salvar pendência');
+                }
+                
+                // Fechar modal e recarregar dados
+                modalPendencia.hide();
+                await carregarPendencias();
+                mostrarNotificacao('Pendência salva com sucesso!');
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarNotificacao('Erro ao salvar pendência', 'danger');
+            }
+        }
+        
+        async function editarPendencia(id) {
+            try {
+                const response = await fetch(`/api/pendencias/${id}`);
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar pendência');
+                }
+                
+                const pendencia = await response.json();
+                
+                // Limpar formulário
+                limparFormulario();
+                
+                // Preencher dados básicos
+                document.getElementById('pendencia-id').value = pendencia.id;
+                document.getElementById('situacao').value = pendencia.situacao;
+                document.getElementById('uf').value = pendencia.uf;
+                
+                // Preencher pendências
+                const pendenciasContainer = document.getElementById('pendencias-container');
+                pendenciasContainer.innerHTML = '';
+                
+                if (pendencia.pendencias && pendencia.pendencias.length > 0) {
+                    pendencia.pendencias.forEach(item => {
+                        const novoItem = document.createElement('div');
+                        novoItem.className = 'item-container';
+                        novoItem.innerHTML = `
+                            <div class="d-flex">
+                                <span class="item-number">${item.numero}.</span>
+                                <textarea class="form-control item-text pendencia-item" rows="2" required>${item.descricao}</textarea>
+                            </div>
+                            <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        `;
+                        
+                        pendenciasContainer.appendChild(novoItem);
+                    });
+                } else {
+                    // Adicionar um item vazio
+                    const novoItem = document.createElement('div');
+                    novoItem.className = 'item-container';
+                    novoItem.innerHTML = `
+                        <div class="d-flex">
+                            <span class="item-number">1.</span>
+                            <textarea class="form-control item-text pendencia-item" rows="2" required></textarea>
+                        </div>
+                        <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    `;
+                    
+                    pendenciasContainer.appendChild(novoItem);
+                }
+                
+                // Preencher resumos
+                const resumosContainer = document.getElementById('resumos-container');
+                resumosContainer.innerHTML = '';
+                
+                if (pendencia.resumos && pendencia.resumos.length > 0) {
+                    pendencia.resumos.forEach(item => {
+                        const novoItem = document.createElement('div');
+                        novoItem.className = 'item-container';
+                        novoItem.innerHTML = `
+                            <div class="d-flex">
+                                <span class="item-number">${item.numero}.</span>
+                                <textarea class="form-control item-text resumo-item" rows="2" required>${item.descricao}</textarea>
+                            </div>
+                            <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        `;
+                        
+                        resumosContainer.appendChild(novoItem);
+                    });
+                } else {
+                    // Adicionar um item vazio
+                    const novoItem = document.createElement('div');
+                    novoItem.className = 'item-container';
+                    novoItem.innerHTML = `
+                        <div class="d-flex">
+                            <span class="item-number">1.</span>
+                            <textarea class="form-control item-text resumo-item" rows="2" required></textarea>
+                        </div>
+                        <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    `;
+                    
+                    resumosContainer.appendChild(novoItem);
+                }
+                
+                // Preencher decisões
+                const decisoesContainer = document.getElementById('decisoes-container');
+                decisoesContainer.innerHTML = '';
+                
+                if (pendencia.decisoes && pendencia.decisoes.length > 0) {
+                    pendencia.decisoes.forEach(item => {
+                        const novoItem = document.createElement('div');
+                        novoItem.className = 'item-container';
+                        novoItem.innerHTML = `
+                            <div class="d-flex">
+                                <span class="item-number">${item.numero}.</span>
+                                <textarea class="form-control item-text decisao-item" rows="2" required>${item.descricao}</textarea>
+                            </div>
+                            <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        `;
+                        
+                        decisoesContainer.appendChild(novoItem);
+                    });
+                } else {
+                    // Adicionar um item vazio
+                    const novoItem = document.createElement('div');
+                    novoItem.className = 'item-container';
+                    novoItem.innerHTML = `
+                        <div class="d-flex">
+                            <span class="item-number">1.</span>
+                            <textarea class="form-control item-text decisao-item" rows="2" required></textarea>
+                        </div>
+                        <button type="button" class="delete-item-btn" onclick="removerItem(this)">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    `;
+                    
+                    decisoesContainer.appendChild(novoItem);
+                }
+                
+                // Abrir modal
+                document.getElementById('modalNovaPendenciaLabel').textContent = 'Editar Pendência';
+                modalPendencia.show();
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarNotificacao('Erro ao carregar pendência', 'danger');
+            }
+        }
+        
+        async function confirmarExclusao(id) {
+            if (confirm('Tem certeza que deseja excluir esta pendência?')) {
+                try {
+                    const response = await fetch(`/api/pendencias/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Erro ao excluir pendência');
+                    }
+                    
+                    await carregarPendencias();
+                    mostrarNotificacao('Pendência excluída com sucesso!');
+                } catch (error) {
+                    console.error('Erro:', error);
+                    mostrarNotificacao('Erro ao excluir pendência', 'danger');
+                }
+            }
+        }
+        
+        // Funções auxiliares
+        function mostrarNotificacao(mensagem, tipo = 'success') {
+            const notificacao = document.getElementById('autosave-notice');
+            
+            // Definir classe de cor
+            if (tipo === 'success') {
+                notificacao.style.backgroundColor = 'var(--success-color)';
+            } else if (tipo === 'danger') {
+                notificacao.style.backgroundColor = 'var(--danger-color)';
+            } else if (tipo === 'warning') {
+                notificacao.style.backgroundColor = 'var(--warning-color)';
+            }
+            
+            // Definir mensagem
+            notificacao.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${mensagem}`;
+            
+            // Mostrar notificação
+            notificacao.style.display = 'flex';
+            
+            // Esconder após 3 segundos
+            setTimeout(() => {
+                notificacao.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
